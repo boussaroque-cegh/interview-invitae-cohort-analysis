@@ -7,7 +7,7 @@ import csv
 class CustomerTimeSpanCohorts:
     DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
 
-    def __init__(self, path_csv_file: str = '../data/customers.csv', recent_date: datetime = datetime.datetime.now(),
+    def __init__(self, path_csv_file: str = './data/customers.csv', recent_date: datetime = datetime.datetime.now(),
                  days_interval_length: int = 7, number_of_intervals: int = 13):
         self.customers_and_matching_cohort = defaultdict(tuple)
         self.cohort_cardinality = defaultdict(int)
