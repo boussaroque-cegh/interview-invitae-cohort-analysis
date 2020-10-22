@@ -44,3 +44,24 @@ class TestOrderTimeSpanAggregation:
         customers_cohorts.track_customer('QAZAQ', '2020-09-23 06:18:23')
         customers_cohorts.track_customer('QaZaQ', '2020-10-01 08:51:52')
         return customers_cohorts
+
+    def test_utc_full_customer_and_order_file(self):
+        utc_time_zone = datetime.timezone(datetime.timedelta(), name="GMT")
+        customers_cohorts = ctsc.CustomerTimeSpanCohorts(
+            recent_date=datetime.datetime(2015, 7, 7, 19, 00, 00, tzinfo=utc_time_zone), number_of_intervals=4)
+        customers_cohorts.read_customers_csv_file()
+        orders_by_time_slot: otsa = otsa.OrderTimeSpanAggregation(customer_cohorts=customers_cohorts)
+        orders_by_time_slot.read_orders_csv_file()
+        assert len(orders_by_time_slot.customer_group_to_order_accumulated) == 4
+        assert [order_count for order_count in reversed(
+            orders_by_time_slot.customer_group_to_order_accumulated['2015/07/01-2015/07/07'])] ==\
+               [[173, 153]]
+        assert [order_count for order_count in reversed(
+            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/24-2015/06/30'])] ==\
+               [[123, 111], [46, 25]]
+        assert [order_count for order_count in reversed(
+            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/17-2015/06/23'])] ==\
+               [[156, 146], [58, 29], [49, 11]]
+        assert [order_count for order_count in reversed(
+            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/10-2015/06/16'])] ==\
+               [[140, 136], [58, 40], [47, 11], [45, 11]]
