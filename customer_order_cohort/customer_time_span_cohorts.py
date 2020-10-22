@@ -23,6 +23,11 @@ class CustomerTimeSpanCohorts:
         self.delta_time_zone: dtm.timedelta = recent_date.utcoffset() # delta with GMT time
         if self.delta_time_zone is None:
             self.delta_time_zone = dtm.datetime.now() - dtm.datetime.utcnow()  # default to local offset
+            # rounding to the second, seems test failure on github with 3 or 4 microseconds diff
+            self.delta_time_zone = dtm.timedelta(days=self.delta_time_zone.days,
+                                             seconds=self.delta_time_zone.seconds + int(
+                                                 round(self.delta_time_zone.microseconds / 10 ** 6)),
+                                             microseconds=0)
             #  if recent_date.dstzinfo.dst() if recent_date.tzinfo is not None else datetime.timezone.utc
         self.recent_date = self.rounded_to_hour_zero(recent_date) + dtm.timedelta(days=1)  # midnight the next day
         self.recent_date_included = self.recent_date - dtm.timedelta(seconds=1) # almost midnight on most recent date

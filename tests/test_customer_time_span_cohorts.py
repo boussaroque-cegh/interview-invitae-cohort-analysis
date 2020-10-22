@@ -27,6 +27,9 @@ class TestCustomerTimeSpanCohorts:
         assert customers_cohorts.recent_date == datetime.datetime(2017, 7, 8, 0, 0, 0)
         assert customers_cohorts.oldest_date == datetime.datetime(2017, 5, 27, 0, 0, 0)
         local_delta = datetime.datetime.now() - datetime.datetime.utcnow()
+        local_delta = datetime.timedelta(days=local_delta.days,
+                                         seconds=local_delta.seconds+int(round(local_delta.microseconds/10**6)),
+                                         microseconds=0)
         assert customers_cohorts.delta_time_zone == local_delta
         assert customers_cohorts.convert_date_in_range('2017-06-07  22:51:10') == \
                datetime.datetime(2017, 6, 7, 22, 51, 10) + local_delta
