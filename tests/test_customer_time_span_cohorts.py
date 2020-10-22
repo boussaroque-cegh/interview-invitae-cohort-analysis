@@ -53,8 +53,14 @@ class TestCustomerTimeSpanCohorts:
         assert customers_cohorts.track_customer('wassaw', '2015-07-09  00:00:00') is None  # out of date range
         assert customers_cohorts.track_customer('qazaq', '2015-07-06  07:47:27') is None  # customer id already tracked
         assert 'qazaq' in customers_cohorts.customers_and_matching_cohort
+        assert customers_cohorts.customers_and_matching_cohort['qazaq'][0] == '2015/07/01-2015/07/07'
+        assert customers_cohorts.customers_and_matching_cohort['qazaq'][1] == datetime.datetime(2015, 7, 1, 0, 0, 0)
+        assert customers_cohorts.customers_and_matching_cohort['qazaq'][2] == datetime.datetime(2015, 7, 8, 0, 0, 0)
         assert 'plokijuh' in customers_cohorts.customers_and_matching_cohort
+        assert customers_cohorts.customers_and_matching_cohort['plokijuh'][0] ==\
+               customers_cohorts.customers_and_matching_cohort['qazaq'][0]
         assert 'hujikolp' in customers_cohorts.customers_and_matching_cohort
+        assert customers_cohorts.customers_and_matching_cohort['hujikolp'][0] == '2015/05/20-2015/05/26'
         assert 'tressert' not in customers_cohorts.customers_and_matching_cohort
         assert customers_cohorts.cohort_cardinality['2015/07/01-2015/07/07'] == 5
         assert customers_cohorts.cohort_cardinality['2015/05/20-2015/05/26'] == 1

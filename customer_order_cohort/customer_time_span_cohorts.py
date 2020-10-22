@@ -124,7 +124,7 @@ class CustomerTimeSpanCohorts:
 
     def read_customers_csv_file(self) -> int:
         """
-        Open teh file and iterate over its csv entries to build customer cohorts
+        Open the csv file and iterate over its entries to build customer cohorts.
         :returns the total number of customer groups from all entries of the csv file
         in the date range of the analysis"""
 
