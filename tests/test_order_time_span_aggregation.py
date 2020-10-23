@@ -19,15 +19,15 @@ class TestOrderTimeSpanAggregation:
         assert '2020/09/28-2020/10/04' in orders_by_time_slot.customer_group_to_order_accumulated
         order_counts_first_cohort = orders_by_time_slot.customer_group_to_order_accumulated['2020/09/28-2020/10/04']
         # qazaq order none the first week, 2 the second week, and 2 the last week
-        assert order_counts_first_cohort == [[2, 0], [2, 1], [0, 0]]
+        assert order_counts_first_cohort == [[{'qazaq'}, set()], [{'qazaq'}, {'qazaq'}], [set(), set()]]
         assert '2020/10/05-2020/10/11' in orders_by_time_slot.customer_group_to_order_accumulated
-        order_counts_second_cohort = orders_by_time_slot.customer_group_to_order_accumulated['2020/10/05-2020/10/11']
-        # plokijuh and wassaw only put orders the second week
-        assert order_counts_second_cohort == [[0, 0], [3, 2]]
+        order_counts_second_cohort = orders_by_time_slot.get_counts_for_cohort('2020/10/05-2020/10/11')
+        # from this cohort, plokijuh and wassaw only put orders the second week
+        assert order_counts_second_cohort == [[2, 2], [0, 0]]
         assert '2020/10/12-2020/10/18' in orders_by_time_slot.customer_group_to_order_accumulated
         order_counts_recent_cohort = orders_by_time_slot.customer_group_to_order_accumulated['2020/10/12-2020/10/18']
         # single order for hujikolp the most recent week
-        assert order_counts_recent_cohort == [[1, 1]]
+        assert order_counts_recent_cohort == [[{'hujikolp'}, {'hujikolp'}]]
 
     @staticmethod
     def make_pst_test_customer_cohorts() ->ctsc.CustomerTimeSpanCohorts:
@@ -53,15 +53,11 @@ class TestOrderTimeSpanAggregation:
         orders_by_time_slot: otsa = otsa.OrderTimeSpanAggregation(customer_cohorts=customers_cohorts)
         orders_by_time_slot.read_orders_csv_file()
         assert len(orders_by_time_slot.customer_group_to_order_accumulated) == 4
-        assert [order_count for order_count in reversed(
-            orders_by_time_slot.customer_group_to_order_accumulated['2015/07/01-2015/07/07'])] ==\
-               [[173, 153]]
-        assert [order_count for order_count in reversed(
-            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/24-2015/06/30'])] ==\
-               [[123, 111], [46, 25]]
-        assert [order_count for order_count in reversed(
-            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/17-2015/06/23'])] ==\
-               [[156, 146], [58, 29], [49, 11]]
-        assert [order_count for order_count in reversed(
-            orders_by_time_slot.customer_group_to_order_accumulated['2015/06/10-2015/06/16'])] ==\
-               [[140, 136], [58, 40], [47, 11], [45, 11]]
+        assert orders_by_time_slot.get_counts_for_cohort('2015/07/01-2015/07/07') ==\
+               [[153, 153]]
+        assert orders_by_time_slot.get_counts_for_cohort('2015/06/24-2015/06/30') ==\
+               [[111, 111], [41, 25]]
+        assert orders_by_time_slot.get_counts_for_cohort('2015/06/17-2015/06/23') ==\
+               [[146, 146], [54, 29], [40, 11]]
+        assert orders_by_time_slot.get_counts_for_cohort('2015/06/10-2015/06/16') ==\
+               [[136, 136], [56, 40], [41, 11], [34, 11]]
