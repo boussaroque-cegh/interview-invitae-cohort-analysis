@@ -111,7 +111,7 @@ class OrderTimeSpanAggregation:
         """
 
         with open(output_csv_file_path, mode='w', encoding='utf8') as csv_file:
-            entry_writer = csv.writer(csv_file)
+            entry_writer = csv.writer(csv_file, lineterminator='\n')
             days_in_period: int = self.customer_cohorts.days_interval_length
             headers = ['Cohort', 'Customers']
             for i in range(self.customer_cohorts.number_of_intervals):
