@@ -1,5 +1,6 @@
 from tests import test_customer_time_span_cohorts, test_order_time_span_aggregation
 
+
 def test_customer_read():
     test_cohort = test_customer_time_span_cohorts.TestCustomerTimeSpanCohorts()
     test_cohort.test_date_utc_conversion()
