@@ -20,17 +20,17 @@ class CustomerTimeSpanCohorts:
         self.path_csv_file: str = path_csv_file
         self.days_interval_length: int = days_interval_length
         # try to use tzinfo but not sure it is useful. No default implementation. Should import pytz maybe
-        self.delta_time_zone: dtm.timedelta = recent_date.utcoffset() # delta with GMT time
+        self.delta_time_zone: dtm.timedelta = recent_date.utcoffset()  # delta with GMT time
         if self.delta_time_zone is None:
             self.delta_time_zone = dtm.datetime.now() - dtm.datetime.utcnow()  # default to local offset
             # rounding to the second, seems test failure on github with 3 or 4 microseconds diff
-            self.delta_time_zone = dtm.timedelta(days=self.delta_time_zone.days,
-                                             seconds=self.delta_time_zone.seconds + int(
-                                                 round(self.delta_time_zone.microseconds / 10 ** 6)),
-                                             microseconds=0)
+            self.delta_time_zone = dtm.timedelta(
+                days=self.delta_time_zone.days,
+                seconds=self.delta_time_zone.seconds + int(round(self.delta_time_zone.microseconds / 10 ** 6)),
+                microseconds=0)
             #  if recent_date.dstzinfo.dst() if recent_date.tzinfo is not None else datetime.timezone.utc
         self.recent_date = self.rounded_to_hour_zero(recent_date) + dtm.timedelta(days=1)  # midnight the next day
-        self.recent_date_included = self.recent_date - dtm.timedelta(seconds=1) # almost midnight on most recent date
+        self.recent_date_included = self.recent_date - dtm.timedelta(seconds=1)  # almost midnight on most recent date
         self.number_of_intervals = number_of_intervals
         self.oldest_date = self.recent_date - dtm.timedelta(days=days_interval_length*number_of_intervals)
 
@@ -109,7 +109,7 @@ class CustomerTimeSpanCohorts:
         self.cohort_cardinality[cohort_id] += 1
         return cohort_id
 
-    def read_all_customer_entries(self, iterator, index_for_id: int, index_for_created: int) ->int:
+    def read_all_customer_entries(self, iterator, index_for_id: int, index_for_created: int) -> int:
         """
         Reads each input entry and record its customer cohort
         :param iterator: the iterator to get all entries, full scan. ??Don't know how to specify iterator type??
@@ -130,6 +130,6 @@ class CustomerTimeSpanCohorts:
 
         with open(self.path_csv_file, mode='r') as csv_file:
             entry_reader = csv.reader(csv_file)  # use csv.DictReader instead?
-            header = next(entry_reader)  # skip header
+            next(entry_reader)  # skip header
             self.read_all_customer_entries(entry_reader, 0, 1)
         return len(self.cohort_cardinality)

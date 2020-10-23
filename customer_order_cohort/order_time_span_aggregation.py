@@ -22,13 +22,13 @@ class OrderTimeSpanAggregation:
         # same pattern as CustomerTimeSpanCohorts.read_customers_csv_file to get an iterator
         with open(self.path_csv_file, mode='r') as csv_file:
             entry_reader = csv.reader(csv_file)  # use csv.DictReader instead?
-            header = next(entry_reader)  # skip header
+            next(entry_reader)  # skip header
             # order ID, customer ID, order date, num order by customer
             self.read_all_order_entries(entry_reader, 0, 2, 3, 1)
         return len(self.customer_cohorts.cohort_cardinality)
 
     def read_all_order_entries(self, entry_reader, order_id_index: int, customer_id_index: int,
-                               order_created_index: int, order_sequence_index: int):
+                               order_created_index: int, order_sequence_index: int) -> int:
         """
         Extract order data for each order entry, and pass it to be filtered and grouped
         :param entry_reader: all entries
@@ -43,7 +43,7 @@ class OrderTimeSpanAggregation:
             self.track_order(entry[customer_id_index], entry[order_created_index], entry[order_sequence_index])
         return len(self.customer_cohorts.cohort_cardinality)
 
-    def track_order(self, customer_id: str, order_creation_date: str, order_sequence: str):
+    def track_order(self, customer_id: str, order_creation_date: str, order_sequence: str) -> []:
         """
         Find matching customer time-span-group by customer_id from customer_time_span_cohorts.
         If there is a match compute matching order time slot index from order creation date
@@ -61,12 +61,20 @@ class OrderTimeSpanAggregation:
             return None
         # aggregate order data, simple count increment
         count_and_first_count: [] = self.get_counts_for_date(customer_id, order_created)
-        count_and_first_count[0] += 1
+        count_and_first_count[0].add(customer_id)
         if order_sequence == '1':
-            count_and_first_count[1] += 1
+            count_and_first_count[1].add(customer_id)
         return count_and_first_count
 
-    def get_counts_for_date(self, customer_id: str, order_created: datetime.datetime):
+    def get_counts_for_date(self, customer_id: str, order_created: datetime.datetime) -> []:
+        """
+        Get the cohort for a customer, the array of the matching orders distinct customer ids,
+        and the matching sub set for the order creation time
+        :param customer_id: a customer ID captured when building teh cohorts
+        :param order_created: order creation to locate matching period
+        :return: array with two sets, one for all distinct orders, one for first time orders
+        """
+
         customer_cohort_key: str = self.customer_cohorts.customers_and_matching_cohort[customer_id][0]
         if customer_cohort_key not in self.customer_group_to_order_accumulated:
             # init time slot with 0 order and 0 first time order
@@ -75,8 +83,48 @@ class OrderTimeSpanAggregation:
                 self.customer_cohorts.recent_date - self.customer_cohorts.customers_and_matching_cohort[customer_id][1]
             cohort_intervals: int = cohort_intervals_delta.days // self.customer_cohorts.days_interval_length
             self.customer_group_to_order_accumulated[customer_cohort_key] =\
-                [[0,0] for i in range(cohort_intervals)]
+                [[set(), set()] for i in range(cohort_intervals)]
         time_slot_delta: datetime.timedelta = self.customer_cohorts.recent_date - order_created
         time_slot_index: int = time_slot_delta.days // self.customer_cohorts.days_interval_length
         return self.customer_group_to_order_accumulated[customer_cohort_key][time_slot_index]
 
+    def get_counts_for_cohort(self, customer_cohort_key: str) -> []:
+        """
+        Helper method to summarise distinct tracked customer IDs per period, into total order count
+        :param customer_cohort_key: one of the customer cohort ID tracked by this analysis
+        :return: array or array of 2 ints, matching teh pair of count per period, with earlier orders period first
+        """
+        if customer_cohort_key not in self.customer_group_to_order_accumulated:
+            return None
+        customer_ids_per_periods = self.customer_group_to_order_accumulated[customer_cohort_key]
+        return [[len(order_count[0]), len(order_count[1])] for
+                order_count in reversed(customer_ids_per_periods)]
+
+    def write_orders_count_by_cohorts_csv_file(self, output_csv_file_path: str) -> int:
+        """
+        Flush summary of the order analysis as a csv file. Two lines per customer cohort,
+         one column for cohort ID
+         one column for total customer count in the cohort,
+         one column per period (line 1 for total count, line 2 for first count)
+        :param output_csv_file_path: path to write file
+        :return: number of cohort in the file
+        """
+
+        with open(output_csv_file_path, mode='w', encoding='utf8') as csv_file:
+            entry_writer = csv.writer(csv_file)
+            days_in_period: int = self.customer_cohorts.days_interval_length
+            headers = ['Cohort', 'Customers']
+            for i in range(self.customer_cohorts.number_of_intervals):
+                headers.append(f'{i*days_in_period}-{(i+1)*days_in_period-1} days')
+            entry_writer.writerow(headers)
+            for cohort_key in reversed(sorted(self.customer_cohorts.cohort_cardinality)):
+                if cohort_key in self.customer_group_to_order_accumulated:
+                    customer_ids_per_periods = self.customer_group_to_order_accumulated[cohort_key]
+                    cohort_counts = [cohort_key, self.customer_cohorts.cohort_cardinality[cohort_key]]
+                    cohort_first_counts = ['', '']
+                    for order_count in reversed(customer_ids_per_periods):
+                        cohort_counts.append(len(order_count[0]))
+                        cohort_first_counts.append(len(order_count[1]))
+                    entry_writer.writerow(cohort_counts)
+                    entry_writer.writerow(cohort_first_counts)
+        return len(self.customer_cohorts.cohort_cardinality)
