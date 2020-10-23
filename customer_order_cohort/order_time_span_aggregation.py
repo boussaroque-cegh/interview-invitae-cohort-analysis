@@ -119,12 +119,17 @@ class OrderTimeSpanAggregation:
             entry_writer.writerow(headers)
             for cohort_key in reversed(sorted(self.customer_cohorts.cohort_cardinality)):
                 if cohort_key in self.customer_group_to_order_accumulated:
-                    customer_ids_per_periods = self.customer_group_to_order_accumulated[cohort_key]
-                    cohort_counts = [cohort_key, self.customer_cohorts.cohort_cardinality[cohort_key]]
+                    cohort_total = self.customer_cohorts.cohort_cardinality[cohort_key]
+                    cohort_counts = [cohort_key, cohort_total]
                     cohort_first_counts = ['', '']
+                    customer_ids_per_periods = self.customer_group_to_order_accumulated[cohort_key]
                     for order_count in reversed(customer_ids_per_periods):
-                        cohort_counts.append(len(order_count[0]))
-                        cohort_first_counts.append(len(order_count[1]))
+                        cohort_counts.append(
+                            f'{round(100*len(order_count[0])/cohort_total, 2)}% orderers ({len(order_count[0])})'
+                        )
+                        cohort_first_counts.append(
+                            f'{round(100*len(order_count[1])/cohort_total, 2)}% 1st time ({len(order_count[1])})'
+                        )
                     entry_writer.writerow(cohort_counts)
                     entry_writer.writerow(cohort_first_counts)
         return len(self.customer_cohorts.cohort_cardinality)
