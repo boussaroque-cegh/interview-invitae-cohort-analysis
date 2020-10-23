@@ -1,6 +1,10 @@
 # interview-invitae-cohort-analysis
  Implementation of cohort analysis for customer data available from https://github.com/invitae/cohort-analysis-assignment
 
+ ## Speedy-quick
+ 
+ Get all files, load them in your IDE and run main.py. You should get the same file as 'ordercounts.csv'
+ 
  ## Note to interviewers
  
  I am not fluent in Python or GitHub. I can read and understand code and configurations, but I usually play in other sandboxes.
