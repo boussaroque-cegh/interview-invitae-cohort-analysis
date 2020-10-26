@@ -65,9 +65,9 @@ class TestOrderTimeSpanAggregation:
     def test_silly_analysis(self):
         orders_by_time_slot: otsa.OrderTimeSpanAggregation = otsa.OrderTimeSpanAggregation(
             customer_cohorts=ctsc.CustomerTimeSpanCohorts())
+        raw_orders = [
+            ['qazaq', '2020-10-06 20:43:17', '2'], ['qazaq', '2020-10-05 23:13:33', '1']
+        ]
         with pytest.raises(ValueError) as e:
-            raw_orders = [
-                ['qazaq', '2020-10-06 20:43:17', '2'], ['qazaq', '2020-10-05 23:13:33', '1']
-            ]
             orders_by_time_slot.read_all_order_entries(raw_orders, -1, 0, 1, 2)
-            assert str(e.value).startswith('at least on cohort is needed in customer_cohorts')
+        assert str(e.value).startswith('at least on cohort is needed in customer_cohorts')
