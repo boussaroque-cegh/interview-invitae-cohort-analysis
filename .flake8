@@ -1,8 +1,8 @@
 [flake8]
 exclude =
-    .env
-    .git
-    .github
-    .pytest_cache
+    .env,
+    venv,
+    .git,
+    .github,
+    .pytest_cache,
     __pycache__
-
