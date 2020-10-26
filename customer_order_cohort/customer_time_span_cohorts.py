@@ -2,6 +2,13 @@
 Convert each customer data entry to a cohort ID based on customer creation date.
 record customer ID to its matching cohort data (cohort ID, and date range of the cohort).
 record count of customer data entry per cohort.
+
+SHOULDDO??
+from setuptools import setup
+
+setup(
+    python_requires='>=3.6'
+)
 """
 
 import datetime as dtm

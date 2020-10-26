@@ -1,4 +1,5 @@
 from tests import test_customer_time_span_cohorts, test_order_time_span_aggregation
+import sys
 
 
 def test_customer_read():
@@ -19,5 +20,9 @@ def test_order_read():
 
 
 if __name__ == '__main__':
+    if sys.version_info.major < 3 or sys.version_info.minor < 6:
+        print('Python 3.6 or higher is required. Currently running Python {}.{}'.
+              format(sys.version_info.major, sys.version_info.minor))
+        sys.exit(1)
     test_customer_read()
     test_order_read()
