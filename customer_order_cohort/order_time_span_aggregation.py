@@ -9,18 +9,22 @@ class OrderTimeSpanAggregation:
     Time span are offset from customer cohort interval: recent date plus number of days from order created
     """
 
-    def __init__(self, path_csv_file: str = './data/orders.csv', customer_cohorts: ctsc.CustomerTimeSpanCohorts = None):
+    def __init__(self, customer_cohorts: ctsc.CustomerTimeSpanCohorts = None):
         self.customer_group_to_order_accumulated: dict = {}  # SHOULDDO: defaultdict of array?
-        self.path_csv_file = path_csv_file
+        if customer_cohorts is None or not isinstance(customer_cohorts, ctsc.CustomerTimeSpanCohorts):
+            raise TypeError(f'customer_cohorts must be a CustomerTimeSpanCohorts : {customer_cohorts}')
         self.customer_cohorts = customer_cohorts
 
-    def read_orders_csv_file(self) -> int:
+    def read_orders_csv_file(self, path_csv_file: str = './data/orders.csv') -> int:
         """
-        Open the csv file and iterate over its entries to aggregate orders by day intervals
+        Open the csv file and iterate over its entries to aggregate orders by day intervals.
+        Will raise IOError if path is invalid
         :returns the total number of customer groups"""
 
         # same pattern as CustomerTimeSpanCohorts.read_customers_csv_file to get an iterator
-        with open(self.path_csv_file, mode='r') as csv_file:
+        if path_csv_file is None or not isinstance(path_csv_file, str):
+            raise TypeError(f'path_csv_file must be a string: {path_csv_file}')
+        with open(path_csv_file, mode='r') as csv_file:
             entry_reader = csv.reader(csv_file)  # use csv.DictReader instead?
             next(entry_reader)  # skip header
             # order ID, customer ID, order date, num order by customer
@@ -39,6 +43,8 @@ class OrderTimeSpanAggregation:
         :return: number of customer groups
         """
 
+        if len(self.customer_cohorts.cohort_cardinality) < 1:
+            raise ValueError(f'at least on cohort is needed in customer_cohorts: {self.customer_cohorts}')
         for entry in entry_reader:
             self.track_order(entry[customer_id_index], entry[order_created_index], entry[order_sequence_index])
         return len(self.customer_cohorts.cohort_cardinality)
@@ -75,12 +81,13 @@ class OrderTimeSpanAggregation:
         :return: array with two sets, one for all distinct orders, one for first time orders
         """
 
-        customer_cohort_key: str = self.customer_cohorts.customers_and_matching_cohort[customer_id][0]
+        customer_cohort_key: str = self.customer_cohorts.customers_and_matching_cohort[customer_id].id
         if customer_cohort_key not in self.customer_group_to_order_accumulated:
             # init time slot with 0 order and 0 first time order
             # we could always init with self.customer_cohorts.number_of_intervals array length ...
             cohort_intervals_delta: datetime.timedelta = \
-                self.customer_cohorts.recent_date - self.customer_cohorts.customers_and_matching_cohort[customer_id][1]
+                self.customer_cohorts.recent_date -\
+                self.customer_cohorts.customers_and_matching_cohort[customer_id].oldest_date
             cohort_intervals: int = cohort_intervals_delta.days // self.customer_cohorts.days_interval_length
             self.customer_group_to_order_accumulated[customer_cohort_key] =\
                 [[set(), set()] for i in range(cohort_intervals)]
@@ -106,10 +113,13 @@ class OrderTimeSpanAggregation:
          one column for cohort ID
          one column for total customer count in the cohort,
          one column per period (line 1 for total count, line 2 for first count)
+        Will raise IOError if file cannot be written to output_csv_file_path.
         :param output_csv_file_path: path to write file
         :return: number of cohort in the file
         """
 
+        if output_csv_file_path is None or not isinstance(output_csv_file_path, str):
+            raise TypeError(f'output_csv_file_path must be a string: {output_csv_file_path}')
         with open(output_csv_file_path, mode='w', encoding='utf8') as csv_file:
             entry_writer = csv.writer(csv_file, lineterminator='\n')
             days_in_period: int = self.customer_cohorts.days_interval_length
@@ -125,7 +135,7 @@ class OrderTimeSpanAggregation:
                     customer_ids_per_periods = self.customer_group_to_order_accumulated[cohort_key]
                     for order_count in reversed(customer_ids_per_periods):
                         cohort_counts.append(
-                            f'{round(100*len(order_count[0])/cohort_total, 2)}% orderers ({len(order_count[0])})'
+                            f'{round(100*len(order_count[0])/cohort_total, 2)}% orders ({len(order_count[0])})'
                         )
                         cohort_first_counts.append(
                             f'{round(100*len(order_count[1])/cohort_total, 2)}% 1st time ({len(order_count[1])})'

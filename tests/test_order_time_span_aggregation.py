@@ -1,3 +1,4 @@
+import pytest
 import datetime
 from customer_order_cohort import customer_time_span_cohorts as ctsc
 from customer_order_cohort import order_time_span_aggregation as otsa
@@ -6,8 +7,7 @@ from customer_order_cohort import order_time_span_aggregation as otsa
 class TestOrderTimeSpanAggregation:
     def test_pst_read_all_order_entries(self):
         customers: ctsc.CustomerTimeSpanCohorts = self.make_pst_test_customer_cohorts()
-        orders_by_time_slot: otsa = otsa.OrderTimeSpanAggregation(
-            path_csv_file='./data/doesNotExist.csv', customer_cohorts=customers)
+        orders_by_time_slot: otsa.OrderTimeSpanAggregation = otsa.OrderTimeSpanAggregation(customer_cohorts=customers)
         raw_orders = [
             ['QAZAQ', '2020-10-05 11:43:17', '2'], ['QAZAQ', '2020-09-23 07:18:23', '1'],
             ['qazaq', '2020-10-06 20:43:17', '2'], ['qazaq', '2020-10-05 23:13:33', '1'],
@@ -34,7 +34,6 @@ class TestOrderTimeSpanAggregation:
     def make_pst_test_customer_cohorts() -> ctsc.CustomerTimeSpanCohorts:
         pst_time_zone = datetime.timezone(datetime.timedelta(days=-1, seconds=61200), name="PST")
         customers_cohorts = ctsc.CustomerTimeSpanCohorts(
-            path_csv_file='./data/doesNotExist.csv',
             recent_date=datetime.datetime(2020, 10, 18, 23, 47, 13, tzinfo=pst_time_zone),
             number_of_intervals=3
         )  # from Sunday Oct 18 down to Monday Sept 28
@@ -62,3 +61,13 @@ class TestOrderTimeSpanAggregation:
                [[146, 146], [54, 29], [40, 11]]
         assert orders_by_time_slot.get_counts_for_cohort('2015/06/10-2015/06/16') ==\
                [[136, 136], [56, 40], [41, 11], [34, 11]]
+
+    def test_silly_analysis(self):
+        orders_by_time_slot: otsa.OrderTimeSpanAggregation = otsa.OrderTimeSpanAggregation(
+            customer_cohorts=ctsc.CustomerTimeSpanCohorts())
+        with pytest.raises(ValueError) as e:
+            raw_orders = [
+                ['qazaq', '2020-10-06 20:43:17', '2'], ['qazaq', '2020-10-05 23:13:33', '1']
+            ]
+            orders_by_time_slot.read_all_order_entries(raw_orders, -1, 0, 1, 2)
+            assert str(e.value).startswith('at least on cohort is needed in customer_cohorts')
